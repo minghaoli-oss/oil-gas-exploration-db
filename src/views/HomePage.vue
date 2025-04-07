@@ -11,8 +11,14 @@
 </template>
 
 <script>
+import { useDataStore } from '@/stores/dataStore';
+
 export default {
   name: 'HomePage',
+  setup() {
+    const store = useDataStore();
+    return { store };
+  },
   data() {
     return {
       searchLocation: '',
@@ -36,8 +42,8 @@ export default {
       try {
         console.log('AMap 是否可用：', typeof AMap);
         this.map = new AMap.Map('map', {
-          center: [116.397428, 39.90923], // 北京天安门
-          zoom: 10
+          center: [116.397428, 39.90923], // 默认中心点（北京）
+          zoom: 2 // 初始缩放级别，显示全球范围
         });
         this.map.plugin(['AMap.ControlBar'], () => {
           const controlBar = new AMap.ControlBar();
@@ -49,24 +55,27 @@ export default {
         this.map.on('error', (e) => {
           console.error('地图加载错误：', e);
         });
-        this.map.setFitView();
       } catch (error) {
         console.error('地图初始化失败：', error);
       }
     },
     addMarkers() {
-      const marker = new AMap.Marker({
-        position: [116.397428, 39.90923],
-        title: '北海油田'
+      const markers = this.store.dataList.map(item => {
+        const marker = new AMap.Marker({
+          position: [item.lng, item.lat],
+          title: item.name
+        });
+        const infoWindow = new AMap.InfoWindow({
+          content: `<div>油气勘探点：${item.name}<br>位置：${item.location}<br>深度：${item.depth}米</div>`,
+          offset: new AMap.Pixel(0, -30)
+        });
+        marker.on('click', () => {
+          infoWindow.open(this.map, marker.getPosition());
+        });
+        return marker;
       });
-      this.map.add(marker);
-      const infoWindow = new AMap.InfoWindow({
-        content: '<div>油气勘探点：北海油田<br>深度：3000米</div>',
-        offset: new AMap.Pixel(0, -30)
-      });
-      marker.on('click', () => {
-        infoWindow.open(this.map, marker.getPosition());
-      });
+      this.map.add(markers);
+      this.map.setFitView(); // 自动调整地图视角以适应所有标记点
     },
     searchMap() {
       if (!this.searchLocation) {
@@ -108,7 +117,7 @@ div {
   background-color: #f0f0f0;
 }
 .search-bar {
-  margin-bottom: 0px;
+  margin-bottom: 20px;
 }
 .search-bar input {
   padding: 8px;

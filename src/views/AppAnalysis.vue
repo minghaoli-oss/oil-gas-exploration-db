@@ -48,8 +48,9 @@ export default {
         depth: item.depth,
         reserve: item.depth / 1000 // 示例：深度转换为亿桶
       }));
-      const csv = ['name,location,depth,reserve(亿桶)', ...data.map(item => `${item.name},${item.location},${item.depth},${item.reserve}`)].join('\n');
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const csvContent = ['名称,位置,深度(米),储量(亿桶)', ...data.map(item => `${item.name},${item.location},${item.depth},${item.reserve}`)].join('\n');
+      const bom = '\uFEFF'; // 添加 UTF-8 BOM
+      const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
       link.download = 'oil-gas-analysis.csv';
