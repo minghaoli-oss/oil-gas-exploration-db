@@ -1,6 +1,7 @@
 <template>
   <div>
     <h1>分析</h1>
+    <button class="btn btn-success mb-3" @click="exportData">导出数据</button>
     <canvas ref="chartCanvas"></canvas>
   </div>
 </template>
@@ -25,7 +26,7 @@ export default {
           labels: this.store.dataList.map(item => item.name),
           datasets: [{
             label: '油气储量 (亿桶)',
-            data: this.store.dataList.map(item => item.depth / 1000), // 示例：深度转换为亿桶
+            data: this.store.dataList.map(item => item.depth / 1000),
             backgroundColor: ['#ff6384', '#36a2eb', '#ffce56']
           }]
         },
@@ -37,6 +38,22 @@ export default {
       });
     } else {
       console.error('Canvas ref not found');
+    }
+  },
+  methods: {
+    exportData() {
+      const data = this.store.dataList.map(item => ({
+        name: item.name,
+        location: item.location,
+        depth: item.depth,
+        reserve: item.depth / 1000 // 示例：深度转换为亿桶
+      }));
+      const csv = ['name,location,depth,reserve(亿桶)', ...data.map(item => `${item.name},${item.location},${item.depth},${item.reserve}`)].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'oil-gas-analysis.csv';
+      link.click();
     }
   }
 };

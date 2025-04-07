@@ -1,11 +1,14 @@
 <template>
   <div>
     <h1>数据管理</h1>
-    <form @submit.prevent="addData">
-      <input v-model="newData.name" placeholder="勘探点名称" />
-      <input v-model="newData.location" placeholder="位置 (经纬度)" />
-      <input v-model="newData.depth" placeholder="深度 (米)" type="number" />
-      <button type="submit">添加</button>
+    <div class="mb-3">
+      <input type="file" @change="importData" accept=".csv" class="form-control" />
+    </div>
+    <form @submit.prevent="addData" class="mb-3">
+      <input v-model="newData.name" placeholder="勘探点名称" class="form-control d-inline-block" style="width: 200px; margin-right: 10px;" />
+      <input v-model="newData.location" placeholder="位置 (经纬度)" class="form-control d-inline-block" style="width: 200px; margin-right: 10px;" />
+      <input v-model="newData.depth" placeholder="深度 (米)" type="number" class="form-control d-inline-block" style="width: 150px; margin-right: 10px;" />
+      <button type="submit" class="btn btn-primary">添加</button>
     </form>
     <table class="table table-bordered">
       <thead>
@@ -50,6 +53,26 @@ export default {
       }
       this.store.addData(this.newData);
       this.newData = { name: '', location: '', depth: null };
+    },
+    importData(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const text = e.target.result;
+        const rows = text.split('\n').slice(1); // 跳过表头
+        rows.forEach(row => {
+          const [name, location, depth] = row.split(',');
+          if (name && location && depth) {
+            this.store.addData({
+              name: name.trim(),
+              location: location.trim(),
+              depth: parseFloat(depth.trim())
+            });
+          }
+        });
+      };
+      reader.readAsText(file);
     }
   }
 };
