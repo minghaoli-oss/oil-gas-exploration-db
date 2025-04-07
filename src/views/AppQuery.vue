@@ -1,46 +1,52 @@
 <template>
-    <div>
-      <h1>查询</h1>
-      <input v-model="searchQuery" placeholder="输入关键词搜索..." />
-      <ul>
-        <li v-for="result in filteredResults" :key="result.id">
-          {{ result.name }} - {{ result.location }}
-        </li>
-      </ul>
+  <div>
+    <h1>查询</h1>
+    <div class="search-bar">
+      <input v-model="searchQuery" placeholder="输入关键词搜索（名称/位置）..." />
     </div>
-  </template>
-  
-  <script>
-  export default {
-    name: 'AppQuery',
-    data() {
-      return {
-        searchQuery: '',
-        results: [
-          { id: 1, name: '北海油田', location: '51.5, -0.09' },
-          { id: 2, name: '墨西哥湾', location: '28.5, -89.5' }
-        ]
-      };
-    },
-    computed: {
-      filteredResults() {
-        return this.results.filter(item =>
-          item.name.toLowerCase().includes(this.searchQuery.toLowerCase())
-        );
-      }
+    <ul class="list-group">
+      <li class="list-group-item" v-for="result in filteredResults" :key="result.id">
+        {{ result.name }} - {{ result.location }} - 深度: {{ result.depth }} 米
+      </li>
+    </ul>
+  </div>
+</template>
+
+<script>
+import { useDataStore } from '@/stores/dataStore';
+
+export default {
+  name: 'AppQuery',
+  setup() {
+    const store = useDataStore();
+    return { store };
+  },
+  data() {
+    return {
+      searchQuery: ''
+    };
+  },
+  computed: {
+    filteredResults() {
+      const query = this.searchQuery.toLowerCase();
+      return this.store.dataList.filter(item =>
+        item.name.toLowerCase().includes(query) ||
+        item.location.toLowerCase().includes(query)
+      );
     }
-  };
-  </script>
-  
-  <style scoped>
-  div {
-    padding: 20px;
   }
-  ul {
-    list-style: none;
-    padding: 0;
-  }
-  li {
-    padding: 10px 0;
-  }
-  </style>
+};
+</script>
+
+<style scoped>
+div {
+  padding: 20px;
+}
+.search-bar {
+  margin-bottom: 20px;
+}
+.search-bar input {
+  padding: 8px;
+  width: 300px;
+}
+</style>
