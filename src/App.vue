@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <NavBar />
-    <div class="container mt-4">
+    <div class="container mt-4 content">
       <router-view></router-view>
     </div>
     <AppFooter />
@@ -31,7 +31,8 @@ export default {
   display: flex;
   flex-direction: column;
 }
-.container {
-  flex: 1;
+.content {
+  flex: 1 0 auto; /* 内容区域自适应高度 */
+  padding-bottom: 20px; /* 确保内容不被页脚覆盖 */
 }
 </style>

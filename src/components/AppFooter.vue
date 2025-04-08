@@ -12,8 +12,7 @@ export default {
 
 <style scoped>
 footer {
-  position: fixed;
-  bottom: 0;
+  flex-shrink: 0; /* 页脚不被压缩 */
   width: 100%;
 }
 </style>

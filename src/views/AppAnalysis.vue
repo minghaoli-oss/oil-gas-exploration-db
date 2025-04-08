@@ -46,10 +46,10 @@ export default {
         name: item.name,
         location: item.location,
         depth: item.depth,
-        reserve: item.depth / 1000 // 示例：深度转换为亿桶
+        reserve: item.depth / 1000
       }));
       const csvContent = ['名称,位置,深度(米),储量(亿桶)', ...data.map(item => `${item.name},${item.location},${item.depth},${item.reserve}`)].join('\n');
-      const bom = '\uFEFF'; // 添加 UTF-8 BOM
+      const bom = '\uFEFF';
       const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
@@ -65,7 +65,8 @@ div {
   padding: 20px;
 }
 canvas {
-  max-width: 600px;
+  width: 100% !important; /* 宽度自适应容器 */
+  height: 480px !important; /* 固定高度，增加可视性 */
   margin: 20px auto;
 }
 </style>

@@ -3,7 +3,7 @@
     <h1>欢迎来到全球油气勘探类比案例数据库</h1>
     <p>这是一个基于WebGIS的数据库系统，旨在为油气勘探提供类比案例的支持。</p>
     <div class="search-bar">
-      <input v-model="searchLocation" placeholder="搜索位置..." @keyup.enter="searchMap" />
+      <input v-model="searchLocation" placeholder="搜索油田名称..." @keyup.enter="searchMap" />
       <button @click="searchMap">搜索</button>
     </div>
     <div id="map" style="height: 500px; background-color: #f0f0f0;"></div>
@@ -42,8 +42,8 @@ export default {
       try {
         console.log('AMap 是否可用：', typeof AMap);
         this.map = new AMap.Map('map', {
-          center: [116.397428, 39.90923], // 默认中心点（北京）
-          zoom: 2 // 初始缩放级别，显示全球范围
+          center: [116.397428, 39.90923], // 默认中心点
+          zoom: 2 // 初始缩放级别
         });
         this.map.plugin(['AMap.ControlBar'], () => {
           const controlBar = new AMap.ControlBar();
@@ -75,33 +75,34 @@ export default {
         return marker;
       });
       this.map.add(markers);
-      this.map.setFitView(); // 自动调整地图视角以适应所有标记点
+      this.map.setFitView();
     },
     searchMap() {
       if (!this.searchLocation) {
         console.error('搜索内容为空');
+        alert('请输入油田名称');
         return;
       }
-      fetch(`http://localhost:3000/amap/geocode?address=${encodeURIComponent(this.searchLocation)}`)
-        .then(response => response.json())
-        .then(result => {
-          if (result.status === '1' && result.geocodes.length > 0) {
-            const location = result.geocodes[0].location.split(',');
-            const lnglat = [parseFloat(location[0]), parseFloat(location[1])];
-            this.map.setCenter(lnglat);
-            this.map.setZoom(10);
-            const marker = new AMap.Marker({
-              position: lnglat,
-              title: this.searchLocation
-            });
-            this.map.add(marker);
-          } else {
-            console.error('搜索失败：', result);
-          }
-        })
-        .catch(error => {
-          console.error('地理编码请求失败：', error);
+
+      const query = this.searchLocation.toLowerCase();
+      const matchedOilField = this.store.dataList.find(item =>
+        item.name.toLowerCase().includes(query)
+      );
+
+      if (matchedOilField) {
+        const lnglat = [matchedOilField.lng, matchedOilField.lat];
+        console.log('找到匹配油田：', matchedOilField.name, lnglat);
+        this.map.setCenter(lnglat); // 设置地图中心
+        this.map.setZoom(4); 
+        const marker = new AMap.Marker({
+          position: lnglat,
+          title: matchedOilField.name
         });
+        this.map.add(marker);
+      } else {
+        console.log('未找到匹配的油田：', this.searchLocation);
+        alert(`未找到油田 "${this.searchLocation}"，请检查输入`);
+      }
     }
   }
 };
