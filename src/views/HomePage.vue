@@ -41,9 +41,9 @@ export default {
   watch: {
     'store.dataList': {
       handler() {
-        this.addMarkers(); // 数据变化时更新地图标记
+        this.addMarkers();
       },
-      deep: true // 深度监听数组内部变化
+      deep: true
     }
   },
   methods: {
@@ -51,8 +51,8 @@ export default {
       try {
         console.log('AMap 是否可用：', typeof AMap);
         this.map = new AMap.Map('map', {
-          center: [116.397428, 39.90923], // 默认中心点 [经度, 纬度]
-          zoom: 2 // 初始缩放级别
+          center: [116.397428, 39.90923],
+          zoom: 2
         });
         this.map.plugin(['AMap.ControlBar'], () => {
           const controlBar = new AMap.ControlBar();
@@ -69,28 +69,30 @@ export default {
       }
     },
     addMarkers() {
-      this.map.clearMap(); // 清空现有标记
-      const markers = this.store.dataList.map(item => {
-        const marker = new AMap.Marker({
-          position: [item.lng, item.lat], // [经度, 纬度]
-          title: item.name,
-          icon: new AMap.Icon({
-            size: new AMap.Size(25, 34),
-            image: 'https://webapi.amap.com/theme/v1.3/markers/n/mark_r.png', // 红色标记
-            imageSize: new AMap.Size(25, 34)
-          })
+      this.map.clearMap();
+      const markers = this.store.dataList
+        .filter(item => typeof item.lng === 'number' && typeof item.lat === 'number' && !isNaN(item.lng) && !isNaN(item.lat))
+        .map(item => {
+          const marker = new AMap.Marker({
+            position: [item.lng, item.lat],
+            title: item.name,
+            icon: new AMap.Icon({
+              size: new AMap.Size(28, 28),
+              image: '/icons/oilfield-icon.png',
+              imageSize: new AMap.Size(28, 28)
+            })
+          });
+          const infoWindow = new AMap.InfoWindow({
+            content: `<div>油气勘探点：${item.name}<br>位置：${item.location}<br>深度：${item.depth}米</div>`,
+            offset: new AMap.Pixel(0, -30)
+          });
+          marker.on('click', () => {
+            infoWindow.open(this.map, marker.getPosition());
+          });
+          return marker;
         });
-        const infoWindow = new AMap.InfoWindow({
-          content: `<div>油气勘探点：${item.name}<br>位置：${item.location}<br>深度：${item.depth}米</div>`,
-          offset: new AMap.Pixel(0, -30)
-        });
-        marker.on('click', () => {
-          infoWindow.open(this.map, marker.getPosition());
-        });
-        return marker;
-      });
       this.map.add(markers);
-      this.map.setFitView(); // 适应所有标记点
+      this.map.setFitView();
     },
     searchMap() {
       if (!this.searchLocation) {
@@ -105,19 +107,22 @@ export default {
       );
 
       if (matchedOilField) {
-        const lnglat = [matchedOilField.lng, matchedOilField.lat]; // [经度, 纬度]
+        if (typeof matchedOilField.lng !== 'number' || typeof matchedOilField.lat !== 'number' || isNaN(matchedOilField.lng) || isNaN(matchedOilField.lat)) {
+          alert('该油田的经纬度数据无效，无法跳转');
+          return;
+        }
+        const lnglat = [matchedOilField.lng, matchedOilField.lat];
         console.log('找到匹配油田：', matchedOilField.name, lnglat);
-        this.map.setCenter(lnglat); // 设置地图中心
-        this.map.setZoom(5); // 放大到5级
+        this.map.setCenter(lnglat);
+        this.map.setZoom(5);
 
-        // 添加搜索点位的标记
         const marker = new AMap.Marker({
           position: lnglat,
           title: matchedOilField.name,
           icon: new AMap.Icon({
-            size: new AMap.Size(25, 34),
-            image: 'https://webapi.amap.com/theme/v1.3/markers/n/mark_r.png', // 红色标记
-            imageSize: new AMap.Size(25, 34)
+            size: new AMap.Size(28, 28),
+            image: '/icons/oilfield-icon.png',
+            imageSize: new AMap.Size(28, 28)
           })
         });
         const infoWindow = new AMap.InfoWindow({
@@ -129,7 +134,6 @@ export default {
         });
         this.map.add(marker);
 
-        // 自动打开信息框
         infoWindow.open(this.map, lnglat);
       } else {
         console.log('未找到匹配的油田：', this.searchLocation);
@@ -137,9 +141,9 @@ export default {
       }
     },
     resetMap() {
-      this.map.clearMap(); // 清空所有标记
-      this.addMarkers(); // 重新添加初始标记
-      this.searchLocation = ''; // 清空搜索框
+      this.map.clearMap();
+      this.addMarkers();
+      this.searchLocation = '';
     }
   }
 };

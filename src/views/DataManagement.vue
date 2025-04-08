@@ -2,7 +2,8 @@
   <div>
     <h1>数据管理</h1>
     <div class="mb-3">
-      <input type="file" @change="importData" accept=".csv" class="form-control" />
+      <input type="file" @change="onFileChange" accept=".csv" class="form-control d-inline-block" style="width: 400px; margin-right: 10px;" />
+      <button @click="importData" class="btn btn-primary">确认上传</button>
     </div>
     <form @submit.prevent="addData" class="mb-3">
       <input v-model="newData.name" placeholder="勘探点名称" class="form-control d-inline-block" style="width: 200px; margin-right: 10px;" />
@@ -42,7 +43,8 @@ export default {
   },
   data() {
     return {
-      newData: { name: '', location: '', depth: null }
+      newData: { name: '', location: '', depth: null },
+      selectedFile: null // 存储选择的文件
     };
   },
   methods: {
@@ -51,28 +53,69 @@ export default {
         alert('请填写所有字段');
         return;
       }
-      this.store.addData(this.newData);
+      const [lng, lat] = this.newData.location.split(',').map(Number);
+      if (isNaN(lng) || isNaN(lat)) {
+        alert('经纬度格式错误，请输入有效的经度和纬度（格式：经度,纬度）');
+        return;
+      }
+      this.store.addData({
+        name: this.newData.name,
+        location: this.newData.location,
+        depth: parseFloat(this.newData.depth),
+        lng,
+        lat
+      });
       this.newData = { name: '', location: '', depth: null };
     },
-    importData(event) {
-      const file = event.target.files[0];
-      if (!file) return;
+    onFileChange(event) {
+      this.selectedFile = event.target.files[0];
+      if (!this.selectedFile) {
+        alert('请选择一个文件');
+      }
+    },
+    importData() {
+      if (!this.selectedFile) {
+        alert('请先选择一个 CSV 文件');
+        return;
+      }
       const reader = new FileReader();
       reader.onload = (e) => {
         const text = e.target.result;
-        const rows = text.split('\n').slice(1); // 跳过表头
-        rows.forEach(row => {
-          const [name, location, depth] = row.split(',');
-          if (name && location && depth) {
-            this.store.addData({
-              name: name.trim(),
-              location: location.trim(),
-              depth: parseFloat(depth.trim())
-            });
+        console.log('原始 CSV 内容：', text);
+        const rows = text.split(/\r?\n/).slice(1).filter(row => row.trim() !== '');
+        console.log('解析后的行：', rows);
+        rows.forEach((row, index) => {
+          // 手动拆分：名称,位置,深度
+          const firstCommaIndex = row.indexOf(',');
+          const lastCommaIndex = row.lastIndexOf(',');
+          if (firstCommaIndex === -1 || lastCommaIndex === -1 || firstCommaIndex === lastCommaIndex) {
+            console.warn(`第 ${index + 1} 行格式错误：${row}`);
+            return;
           }
+          const name = row.substring(0, firstCommaIndex).trim();
+          const depth = row.substring(lastCommaIndex + 1).trim();
+          const location = row.substring(firstCommaIndex + 1, lastCommaIndex).trim();
+          console.log(`第 ${index + 1} 行数据：`, { name, location, depth });
+          if (!name || !location || !depth) {
+            console.warn(`第 ${index + 1} 行数据不完整：${row}`);
+            return;
+          }
+          const [lng, lat] = location.split(',').map(Number);
+          if (isNaN(lng) || isNaN(lat) || isNaN(parseFloat(depth))) {
+            console.warn(`第 ${index + 1} 行数据无效：${row}`);
+            return;
+          }
+          this.store.addData({
+            name,
+            location,
+            depth: parseFloat(depth),
+            lng,
+            lat
+          });
         });
+        console.log('上传后的 dataList：', this.store.dataList);
       };
-      reader.readAsText(file);
+      reader.readAsText(this.selectedFile, 'UTF-8');
     }
   }
 };

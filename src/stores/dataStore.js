@@ -17,8 +17,7 @@ export const useDataStore = defineStore('data', {
   }),
   actions: {
     addData(newData) {
-      const [lng, lat] = newData.location.split(',').map(Number); // 正确解析经纬度
-      this.dataList.push({ ...newData, id: Date.now(), lng, lat });
+      this.dataList.push({ ...newData, id: Date.now() });
     },
     removeData(id) {
       this.dataList = this.dataList.filter(item => item.id !== id);
