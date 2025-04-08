@@ -5,6 +5,7 @@
     <div class="search-bar">
       <input v-model="searchLocation" placeholder="搜索油田名称..." @keyup.enter="searchMap" />
       <button @click="searchMap">搜索</button>
+      <button @click="resetMap" class="reset-btn">恢复初始状态</button>
     </div>
     <div id="map" style="height: 500px; background-color: #f0f0f0;"></div>
   </div>
@@ -60,10 +61,16 @@ export default {
       }
     },
     addMarkers() {
+      this.map.clearMap(); // 清空现有标记
       const markers = this.store.dataList.map(item => {
         const marker = new AMap.Marker({
           position: [item.lng, item.lat],
-          title: item.name
+          title: item.name,
+          icon: new AMap.Icon({
+            size: new AMap.Size(25, 34),
+            image: 'https://webapi.amap.com/theme/v1.3/markers/n/mark_r.png', // 红色标记
+            imageSize: new AMap.Size(25, 34)
+          })
         });
         const infoWindow = new AMap.InfoWindow({
           content: `<div>油气勘探点：${item.name}<br>位置：${item.location}<br>深度：${item.depth}米</div>`,
@@ -75,7 +82,7 @@ export default {
         return marker;
       });
       this.map.add(markers);
-      this.map.setFitView();
+      this.map.setFitView(); // 适应所有标记点
     },
     searchMap() {
       if (!this.searchLocation) {
@@ -93,16 +100,38 @@ export default {
         const lnglat = [matchedOilField.lng, matchedOilField.lat];
         console.log('找到匹配油田：', matchedOilField.name, lnglat);
         this.map.setCenter(lnglat); // 设置地图中心
-        this.map.setZoom(4); 
+        this.map.setZoom(5); // 放大到5级
+
+        // 添加搜索点位的标记
         const marker = new AMap.Marker({
           position: lnglat,
-          title: matchedOilField.name
+          title: matchedOilField.name,
+          icon: new AMap.Icon({
+            size: new AMap.Size(25, 34),
+            image: 'https://webapi.amap.com/theme/v1.3/markers/n/mark_r.png', // 红色标记
+            imageSize: new AMap.Size(25, 34)
+          })
+        });
+        const infoWindow = new AMap.InfoWindow({
+          content: `<div>油气勘探点：${matchedOilField.name}<br>位置：${matchedOilField.location}<br>深度：${matchedOilField.depth}米</div>`,
+          offset: new AMap.Pixel(0, -30)
+        });
+        marker.on('click', () => {
+          infoWindow.open(this.map, marker.getPosition());
         });
         this.map.add(marker);
+
+        // 自动打开信息框
+        infoWindow.open(this.map, lnglat);
       } else {
         console.log('未找到匹配的油田：', this.searchLocation);
         alert(`未找到油田 "${this.searchLocation}"，请检查输入`);
       }
+    },
+    resetMap() {
+      this.map.clearMap(); // 清空所有标记
+      this.addMarkers(); // 重新添加初始标记
+      this.searchLocation = ''; // 清空搜索框
     }
   }
 };
@@ -132,8 +161,15 @@ div {
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  margin-right: 10px;
 }
 .search-bar button:hover {
   background-color: #0056b3;
+}
+.search-bar .reset-btn {
+  background-color: #6c757d; /* 灰色按钮 */
+}
+.search-bar .reset-btn:hover {
+  background-color: #5a6268;
 }
 </style>
