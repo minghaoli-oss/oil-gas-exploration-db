@@ -38,12 +38,20 @@ export default {
       this.map = null;
     }
   },
+  watch: {
+    'store.dataList': {
+      handler() {
+        this.addMarkers(); // 数据变化时更新地图标记
+      },
+      deep: true // 深度监听数组内部变化
+    }
+  },
   methods: {
     initMap() {
       try {
         console.log('AMap 是否可用：', typeof AMap);
         this.map = new AMap.Map('map', {
-          center: [116.397428, 39.90923], // 默认中心点
+          center: [116.397428, 39.90923], // 默认中心点 [经度, 纬度]
           zoom: 2 // 初始缩放级别
         });
         this.map.plugin(['AMap.ControlBar'], () => {
@@ -64,7 +72,7 @@ export default {
       this.map.clearMap(); // 清空现有标记
       const markers = this.store.dataList.map(item => {
         const marker = new AMap.Marker({
-          position: [item.lng, item.lat],
+          position: [item.lng, item.lat], // [经度, 纬度]
           title: item.name,
           icon: new AMap.Icon({
             size: new AMap.Size(25, 34),
@@ -97,7 +105,7 @@ export default {
       );
 
       if (matchedOilField) {
-        const lnglat = [matchedOilField.lng, matchedOilField.lat];
+        const lnglat = [matchedOilField.lng, matchedOilField.lat]; // [经度, 纬度]
         console.log('找到匹配油田：', matchedOilField.name, lnglat);
         this.map.setCenter(lnglat); // 设置地图中心
         this.map.setZoom(5); // 放大到5级
@@ -167,7 +175,7 @@ div {
   background-color: #0056b3;
 }
 .search-bar .reset-btn {
-  background-color: #6c757d; /* 灰色按钮 */
+  background-color: #6c757d;
 }
 .search-bar .reset-btn:hover {
   background-color: #5a6268;

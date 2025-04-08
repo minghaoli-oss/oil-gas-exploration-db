@@ -66,7 +66,7 @@ div {
 }
 canvas {
   width: 100% !important; /* 宽度自适应容器 */
-  height: 480px !important; /* 固定高度，增加可视性 */
+  height: 550px !important; /* 固定高度，增加可视性 */
   margin: 20px auto;
 }
 </style>
