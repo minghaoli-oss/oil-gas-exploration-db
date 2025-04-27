@@ -14,6 +14,12 @@
     <div class="chart-container">
       <canvas ref="porosityChartCanvas"></canvas>
     </div>
+
+    <!-- 储层类型饼图 -->
+    <h2>储层类型分布比例</h2>
+    <div class="chart-container">
+      <canvas ref="reservoirTypeChartCanvas"></canvas>
+    </div>
   </div>
 </template>
 
@@ -31,6 +37,7 @@ export default {
     return {
       reserveChartInstance: null,
       porosityChartInstance: null,
+      reservoirTypeChartInstance: null,
       isChartReady: false
     };
   },
@@ -51,10 +58,61 @@ export default {
     }
   },
   methods: {
+    // 推断储层类型
+    inferReservoirType(oilfield) {
+      const name = oilfield.name.toLowerCase();
+      const porosity = oilfield.porosity || 0;
+
+      if (name.includes('ghawar')) {
+        return '碳酸盐岩';
+      } else if (name.includes('permian')) {
+        return '页岩';
+      } else if (name.includes('brent')) {
+        return '砂岩';
+      } else {
+        // 根据孔隙度推断
+        if (porosity > 12) {
+          return '砂岩';
+        } else if (porosity >= 6 && porosity <= 12) {
+          return '碳酸盐岩';
+        } else {
+          return '页岩';
+        }
+      }
+    },
+    // 计算储层类型比例
+    calculateReservoirTypeRatios() {
+      const totalOilfields = this.store.dataList.length;
+      if (totalOilfields === 0) {
+        return { carbonate: 0, shale: 0, sandstone: 0 };
+      }
+
+      let carbonateCount = 0;
+      let shaleCount = 0;
+      let sandstoneCount = 0;
+
+      this.store.dataList.forEach(oilfield => {
+        const type = this.inferReservoirType(oilfield);
+        if (type === '碳酸盐岩') {
+          carbonateCount++;
+        } else if (type === '页岩') {
+          shaleCount++;
+        } else if (type === '砂岩') {
+          sandstoneCount++;
+        }
+      });
+
+      return {
+        carbonate: (carbonateCount / totalOilfields) * 100,
+        shale: (shaleCount / totalOilfields) * 100,
+        sandstone: (sandstoneCount / totalOilfields) * 100
+      };
+    },
     initCharts() {
       this.isChartReady = true;
       this.initReserveChart();
       this.initPorosityChart();
+      this.initReservoirTypeChart();
     },
     initReserveChart() {
       const chartElement = this.$refs.reserveChartCanvas;
@@ -145,6 +203,57 @@ export default {
         console.error('Porosity chart canvas ref not found');
       }
     },
+    initReservoirTypeChart() {
+      const chartElement = this.$refs.reservoirTypeChartCanvas;
+      console.log('Reservoir type chart canvas:', chartElement);
+      if (chartElement) {
+        const ctx = chartElement.getContext('2d', { willReadFrequently: true });
+        if (ctx) {
+          const ratios = this.calculateReservoirTypeRatios();
+          this.reservoirTypeChartInstance = new Chart(ctx, {
+            type: 'pie',
+            data: {
+              labels: ['碳酸盐岩', '页岩', '砂岩'],
+              datasets: [{
+                label: '储层类型分布',
+                data: [ratios.carbonate, ratios.shale, ratios.sandstone],
+                backgroundColor: ['#ff6384', '#36a2eb', '#ffce56'],
+                borderColor: ['#ffffff', '#ffffff', '#ffffff'],
+                borderWidth: 1
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  position: 'top',
+                  labels: {
+                    font: {
+                      size: 14
+                    }
+                  }
+                },
+                tooltip: {
+                  callbacks: {
+                    label: function(context) {
+                      const label = context.label || '';
+                      const value = context.raw || 0;
+                      return `${label}: ${value.toFixed(1)}%`;
+                    }
+                  }
+                }
+              }
+            }
+          });
+          console.log('Reservoir type chart initialized');
+        } else {
+          console.error('Reservoir type chart context not found');
+        }
+      } else {
+        console.error('Reservoir type chart canvas ref not found');
+      }
+    },
     updateCharts() {
       if (!this.isChartReady) return;
       if (this.reserveChartInstance) {
@@ -157,6 +266,11 @@ export default {
         this.porosityChartInstance.data.datasets[0].data = this.store.dataList.map(item => item.porosity || 0);
         this.porosityChartInstance.update();
       }
+      if (this.reservoirTypeChartInstance) {
+        const ratios = this.calculateReservoirTypeRatios();
+        this.reservoirTypeChartInstance.data.datasets[0].data = [ratios.carbonate, ratios.shale, ratios.sandstone];
+        this.reservoirTypeChartInstance.update();
+      }
     },
     destroyCharts() {
       if (this.reserveChartInstance) {
@@ -166,6 +280,10 @@ export default {
       if (this.porosityChartInstance) {
         this.porosityChartInstance.destroy();
         this.porosityChartInstance = null;
+      }
+      if (this.reservoirTypeChartInstance) {
+        this.reservoirTypeChartInstance.destroy();
+        this.reservoirTypeChartInstance = null;
       }
       this.isChartReady = false;
     },
