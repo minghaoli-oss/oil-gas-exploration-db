@@ -73,14 +73,16 @@ export default {
       const markers = this.store.dataList
         .filter(item => typeof item.lng === 'number' && typeof item.lat === 'number' && !isNaN(item.lng) && !isNaN(item.lat))
         .map(item => {
+          const iconConfig = {
+            size: new AMap.Size(32, 32),
+            image: '/oil-well-icon.png',
+            imageSize: new AMap.Size(32, 32)
+          };
+          console.log('创建标记，图标配置：', iconConfig);
           const marker = new AMap.Marker({
             position: [item.lng, item.lat],
             title: item.name,
-            icon: new AMap.Icon({
-              size: new AMap.Size(25, 34),
-              image: 'https://webapi.amap.com/theme/v1.3/markers/n/mark_r.png',
-              imageSize: new AMap.Size(25, 34)
-            })
+            icon: new AMap.Icon(iconConfig)
           });
           const infoWindow = new AMap.InfoWindow({
             content: `<div>油气勘探点：${item.name}<br>位置：${item.location}<br>深度：${item.depth}米<br>孔隙度：${item.porosity}%</div>`,
@@ -91,6 +93,7 @@ export default {
           });
           return marker;
         });
+      console.log('添加标记数量：', markers.length);
       this.map.add(markers);
       this.map.setFitView();
     },
@@ -114,15 +117,15 @@ export default {
         const lnglat = [matchedOilField.lng, matchedOilField.lat];
         console.log('找到匹配油田：', matchedOilField.name, lnglat);
         this.map.setCenter(lnglat);
-        this.map.setZoom(12);
+        this.map.setZoom(8);
 
         const marker = new AMap.Marker({
           position: lnglat,
           title: matchedOilField.name,
           icon: new AMap.Icon({
-            size: new AMap.Size(25, 34),
-            image: 'https://webapi.amap.com/theme/v1.3/markers/n/mark_r.png',
-            imageSize: new AMap.Size(25, 34)
+            size: new AMap.Size(32, 32),
+            image: '/oil-well-icon.png',
+            imageSize: new AMap.Size(32, 32)
           })
         });
         const infoWindow = new AMap.InfoWindow({
